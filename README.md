@@ -79,6 +79,17 @@ Tab 公告格式可用：
 
 - `<announcement>`：当前 Tab 公告正文
 
+## 自定义标签
+
+以下标签可用于 Header、Footer、玩家条目和公告文本：
+
+- `<left:宽度>文本</left>`：左对齐，不足宽度时在右侧补空格
+- `<right:宽度>文本</right>`：右对齐，不足宽度时在左侧补空格
+- `<center:宽度>文本</center>`：居中对齐，两侧补空格
+- `<align:left|right|center:宽度>文本</align>`：通用对齐写法
+
+
+
 ## 本地构建
 
 ```bash

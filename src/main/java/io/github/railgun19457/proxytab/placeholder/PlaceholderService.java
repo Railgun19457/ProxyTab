@@ -59,14 +59,16 @@ public final class PlaceholderService {
         return deserialize(raw, fieldName, TagResolver.resolver(
             globalResolver(config),
             viewerResolver(config, viewer, serverOnlineCounts),
-            extraResolver
+            extraResolver,
+            CustomTagResolvers.all()
         ));
     }
 
     public Component renderPlayerText(String raw, ProxyTabConfig config, Player target, String fieldName) {
         return deserialize(raw, fieldName, TagResolver.resolver(
             globalResolver(config),
-            playerResolver(config, target)
+            playerResolver(config, target),
+            CustomTagResolvers.all()
         ));
     }
 
