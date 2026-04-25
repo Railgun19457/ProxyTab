@@ -34,7 +34,14 @@ public final class ConfigManager {
     private static final String DEFAULT_PLAYER_FORMAT =
         "<player_server> <gray>|</gray> <white><player_name></white>";
     private static final String DEFAULT_CLOSE_BUTTON =
-        "<newline><click:run_command:'/proxytab close-notice'><hover:show_text:'点击后今天不再提醒'><red>[今日不再提醒]</red></hover></click>";
+        "<click:run_command:'/proxytab close-notice'><hover:show_text:'点击后今天不再提醒'><red>[今日不再提醒]</red></hover></click>";
+    private static final String DEFAULT_CHAT_ANNOUNCEMENT_FORMAT = """
+        <dark_gray>+------------------------------+</dark_gray>
+        <gold><bold>公告</bold></gold>
+        <announcement>
+        <close_button>
+        <dark_gray>+------------------------------+</dark_gray>
+        """;
     private static final String DEFAULT_TAB_ANNOUNCEMENT_FORMAT = """
         <dark_gray>+------------------------------+</dark_gray>
         <gold><bold>公告</bold></gold> <gray>|</gray> <announcement>
@@ -196,7 +203,7 @@ public final class ConfigManager {
             node.node("chat"),
             true,
             true,
-            ""
+            DEFAULT_CHAT_ANNOUNCEMENT_FORMAT
         );
         AnnouncementSlotConfig tab = parseAnnouncementSlot(
             node.node("tab"),
@@ -294,7 +301,7 @@ public final class ConfigManager {
             new AnnouncementConfig(
                 new AnnouncementSlotConfig(
                     true,
-                    "",
+                    DEFAULT_CHAT_ANNOUNCEMENT_FORMAT,
                     new CloseButtonConfig(true, DEFAULT_CLOSE_BUTTON)
                 ),
                 new AnnouncementSlotConfig(

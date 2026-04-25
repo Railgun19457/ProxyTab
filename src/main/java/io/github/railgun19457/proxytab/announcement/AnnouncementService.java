@@ -96,19 +96,39 @@ public final class AnnouncementService {
             return;
         }
 
-        Component message = placeholderService.renderViewerText(
+        Component announcementContent = placeholderService.renderViewerText(
             announcement.content(),
             config,
             player,
             "announcement.chat"
         );
-        if (slotConfig.closeButton().enabled()) {
-            message = message.append(placeholderService.renderViewerText(
+        Component closeButton = slotConfig.closeButton().enabled()
+            ? placeholderService.renderViewerText(
                 slotConfig.closeButton().format(),
                 config,
                 player,
                 "announcements.chat.close-button.format"
-            ));
+            )
+            : Component.empty();
+
+        String format = slotConfig.format();
+        Component message;
+        if (format == null || format.isBlank()) {
+            message = announcementContent;
+            if (slotConfig.closeButton().enabled()) {
+                message = message.append(closeButton);
+            }
+        } else {
+            message = placeholderService.renderViewerText(
+                format,
+                config,
+                player,
+                "announcements.chat.format",
+                net.kyori.adventure.text.minimessage.tag.resolver.TagResolver.resolver(
+                    net.kyori.adventure.text.minimessage.tag.resolver.Placeholder.component("announcement", announcementContent),
+                    net.kyori.adventure.text.minimessage.tag.resolver.Placeholder.component("close_button", closeButton)
+                )
+            );
         }
 
         player.sendMessage(message);

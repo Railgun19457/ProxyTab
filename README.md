@@ -40,6 +40,16 @@ ProxyTab 是一个运行在 Velocity 上的全局 Tab 列表管理插件，用�
 - `/proxytab announcement delete <chat|tab>` 删除公告
 - `/proxytab close-notice` 关闭今日聊天公告提醒（由点击按钮触发）
 
+### 示例
+使用minimessage格式设置公告内容
+```
+/ptab announcement set tab always 这是公告测试<newline><blue>支持minimessage</blue><newline><gold>喵</gold>
+```
+![alt text](docs/image.png)
+```
+/ptab announcement set chat always 这是公告测试<newline><blue>支持minimessage</blue><newline>可以设置点击事件[<hover:show_text:'点击切换'><click:suggest_command:'/server lobby'><light_purple>大厅</light_purple></click></hover>]<newline>喵喵喵
+```
+![alt text](docs/image-1.png)
 ## 权限
 
 - `proxytab.use`：基础命令权限，默认允许所有来源使用
@@ -79,6 +89,11 @@ Tab 公告格式可用：
 
 - `<announcement>`：当前 Tab 公告正文
 
+聊天公告格式可用：
+
+- `<announcement>`：当前聊天公告正文
+- `<close_button>`：关闭按钮内容
+
 ## 自定义标签
 
 以下标签可用于 Header、Footer、玩家条目和公告文本：
@@ -87,7 +102,6 @@ Tab 公告格式可用：
 - `<right:宽度>文本</right>`：右对齐，不足宽度时在左侧补空格
 - `<center:宽度>文本</center>`：居中对齐，两侧补空格
 - `<align:left|right|center:宽度>文本</align>`：通用对齐写法
-
 
 
 ## 本地构建

@@ -4,8 +4,7 @@ general:
   ignore-regex:
     - "^bot_.*"
   blacklisted-servers:
-    - "minigame_bedwars"
-    - "minigame_skywars"
+    - "minigames"
   default-server-name: "<gray>未知区域</gray>"
 
 servers:
@@ -13,39 +12,44 @@ servers:
     - "lobby"
     - "survival"
     - "creative"
+    - "minigames"
     - "default"
   mapping:
-    lobby: "<green>登录大厅</green>"
-    survival: "<aqua>纯净生存</aqua>"
-    creative: "<light_purple>创造模式</light_purple>"
-
+    lobby: "<light_purple>大厅</light_purple>"
+    survival: "<blue>生存服</blue>"
+    creative: "<green>创造服</green>"
+    minigames: "<gold>小游戏</gold>"
 tab:
   enabled: true
   header:
     enabled: true
     value: |
-      <bold><network_id></bold>
-      <gray>当前在线: <green><online></green> 人</gray>
+      <network_id>
   footer:
     enabled: true
     value: |
-      <gray>当前服务器: <current_server></gray>
-      <gray>网络延迟: <ping>ms</gray>
-  player-format: "<player_server> <gray>|</gray> <white><player_name></white>"
+      <gray>服务器: <current_server></gray>  <gray>延迟: <ping> ms</gray>  <gray>在线玩家: <dark_green><server_online></dark_green>/<green><online></green></gray> 
+  player-format: "<left:22><gray>[<player_server>] | </gray><white><player_name></white></left><right:5><gray>[<green><player_ping></green>]</gray></right>"
   sort-mode: "server_then_name"
   show-empty-group: false
 
 announcements:
   chat:
     enabled: true
-    close-button:
-      enabled: true
-      format: "<newline><click:run_command:'/proxytab close-notice'><hover:show_text:'点击后今天不再提醒'><red>[今日不再提醒]</red></hover></click>"
-  tab:
-    enabled: false
     format: |
       <dark_gray>+------------------------------+</dark_gray>
-      <gold><bold>公告</bold></gold> <gray>|</gray> <announcement>
+      <center:26><gold><bold>公告</bold></gold></center>
+      <announcement>
+      <close_button>
+      <dark_gray>+------------------------------+</dark_gray>
+    close-button:
+      enabled: true
+      format: "<click:run_command:'/proxytab close-notice'><hover:show_text:'点击后今日不再进行提醒'><gold>[今日不再提醒]</gold></hover></click>"
+  tab:
+    enabled: true
+    format: |
+      <dark_gray>+------------------------------+</dark_gray>
+      <gold><bold>公告</bold></gold><newline><announcement>
       <dark_gray>+------------------------------+</dark_gray>
 
 storage:
