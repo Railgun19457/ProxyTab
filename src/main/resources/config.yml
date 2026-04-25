@@ -1,0 +1,50 @@
+general:
+  network-id: "<gradient:gold:yellow>ProxyTab Network</gradient>"
+  update-interval-ms: 1000
+  ignore-regex:
+    - "^bot_.*"
+  blacklisted-servers:
+    - "minigame_bedwars"
+    - "minigame_skywars"
+  default-server-name: "<gray>未知区域</gray>"
+
+servers:
+  group-order:
+    - "lobby"
+    - "survival"
+    - "creative"
+    - "default"
+  mapping:
+    lobby: "<green>登录大厅</green>"
+    survival: "<aqua>纯净生存</aqua>"
+    creative: "<light_purple>创造模式</light_purple>"
+
+tab:
+  enabled: true
+  header: |
+    <bold><network_id></bold>
+    <gray>当前在线: <green><online></green> 人</gray>
+  footer: |
+    <gray>当前服务器: <current_server></gray>
+    <gray>网络延迟: <ping>ms</gray>
+  player-format: "<player_server> <gray>|</gray> <white><player_name></white>"
+  sort-mode: "server_then_name"
+  show-empty-group: false
+
+announcements:
+  chat:
+    enabled: true
+    close-button:
+      enabled: true
+      format: "<newline><click:run_command:'/proxytab close-notice'><hover:show_text:'点击后今天不再提醒'><red>[今日不再提醒]</red></hover></click>"
+  tab:
+    enabled: false
+    format: |
+      <dark_gray>+------------------------------+</dark_gray>
+      <gold><bold>公告</bold></gold> <gray>|</gray> <announcement>
+      <dark_gray>+------------------------------+</dark_gray>
+
+storage:
+  type: "json"
+  player-state-file: "data/player-state.json"
+  announcements-file: "data/announcements.json"
