@@ -52,7 +52,7 @@ ProxyTab 是一个运行在 Velocity 上的全局 Tab 列表管理插件，用�
 
 - `general`：网络名称、刷新间隔、玩家过滤规则、黑名单子服和默认子服显示名
 - `servers`：子服分组顺序和子服显示名映射
-- `tab`：Tab 开关、Header、Footer、玩家条目格式和排序策略
+- `tab`：Tab 开关、Header/Footer 独立开关、玩家条目格式和排序策略
 - `announcements`：聊天公告/Tab 公告开关、关闭按钮和 Tab 公告外观
 - `storage`：JSON 存储文件路径
 

@@ -3,8 +3,10 @@ package io.github.railgun19457.proxytab;
 import com.google.inject.Inject;
 import com.velocitypowered.api.command.CommandManager;
 import com.velocitypowered.api.command.CommandMeta;
+import com.velocitypowered.api.event.PostOrder;
 import com.velocitypowered.api.event.Subscribe;
 import com.velocitypowered.api.event.connection.PostLoginEvent;
+import com.velocitypowered.api.event.player.ServerPreConnectEvent;
 import com.velocitypowered.api.event.proxy.ProxyInitializeEvent;
 import com.velocitypowered.api.event.proxy.ProxyShutdownEvent;
 import com.velocitypowered.api.plugin.Plugin;
@@ -44,6 +46,7 @@ public final class ProxyTabPlugin {
 
     private ConfigManager configManager;
     private AnnouncementService announcementService;
+    private TabRenderer tabRenderer;
     private TabScheduler tabScheduler;
 
     @Inject
@@ -64,8 +67,8 @@ public final class ProxyTabPlugin {
 
         TabEntryFactory entryFactory = new TabEntryFactory(placeholderService);
         TabViewBuilder viewBuilder = new TabViewBuilder(server, entryFactory);
-        TabRenderer renderer = new TabRenderer(logger, placeholderService, announcementService);
-        tabScheduler = new TabScheduler(this, server, logger, configManager::current, viewBuilder, renderer);
+        tabRenderer = new TabRenderer(logger, placeholderService, announcementService);
+        tabScheduler = new TabScheduler(this, server, logger, configManager::current, viewBuilder, tabRenderer);
 
         registerCommand();
         tabScheduler.restart();
@@ -90,6 +93,23 @@ public final class ProxyTabPlugin {
             .buildTask(this, () -> announcementService.sendJoinAnnouncement(event.getPlayer()))
             .delay(1, TimeUnit.SECONDS)
             .schedule();
+    }
+
+    @SuppressWarnings("deprecation")
+    @Subscribe(order = PostOrder.LATE)
+    public void onServerPreConnect(ServerPreConnectEvent event) {
+        if (tabRenderer == null || configManager == null || !event.getResult().isAllowed()) {
+            return;
+        }
+
+        String targetServer = event.getResult()
+            .getServer()
+            .orElse(event.getOriginalServer())
+            .getServerInfo()
+            .getName();
+        if (configManager.current().general().blacklistedServers().contains(ConfigManager.normalizeKey(targetServer))) {
+            tabRenderer.releaseBeforeServerSwitch(event.getPlayer());
+        }
     }
 
     public boolean reloadPlugin() {

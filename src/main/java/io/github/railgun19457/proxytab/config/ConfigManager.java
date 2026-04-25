@@ -166,11 +166,18 @@ public final class ConfigManager {
     private TabConfig parseTab(ConfigurationNode node) {
         return new TabConfig(
             node.node("enabled").getBoolean(true),
-            node.node("header").getString(DEFAULT_HEADER),
-            node.node("footer").getString(DEFAULT_FOOTER),
+            parseTextSection(node.node("header"), DEFAULT_HEADER),
+            parseTextSection(node.node("footer"), DEFAULT_FOOTER),
             node.node("player-format").getString(DEFAULT_PLAYER_FORMAT),
             SortMode.parse(node.node("sort-mode").getString("server_then_name")),
             node.node("show-empty-group").getBoolean(false)
+        );
+    }
+
+    private TextSectionConfig parseTextSection(ConfigurationNode node, String defaultValue) {
+        return new TextSectionConfig(
+            node.node("enabled").getBoolean(true),
+            node.node("value").getString(defaultValue)
         );
     }
 
@@ -270,8 +277,8 @@ public final class ConfigManager {
             ),
             new TabConfig(
                 true,
-                DEFAULT_HEADER,
-                DEFAULT_FOOTER,
+                new TextSectionConfig(true, DEFAULT_HEADER),
+                new TextSectionConfig(true, DEFAULT_FOOTER),
                 DEFAULT_PLAYER_FORMAT,
                 SortMode.SERVER_THEN_NAME,
                 false

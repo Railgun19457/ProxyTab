@@ -21,12 +21,16 @@ servers:
 
 tab:
   enabled: true
-  header: |
-    <bold><network_id></bold>
-    <gray>当前在线: <green><online></green> 人</gray>
-  footer: |
-    <gray>当前服务器: <current_server></gray>
-    <gray>网络延迟: <ping>ms</gray>
+  header:
+    enabled: true
+    value: |
+      <bold><network_id></bold>
+      <gray>当前在线: <green><online></green> 人</gray>
+  footer:
+    enabled: true
+    value: |
+      <gray>当前服务器: <current_server></gray>
+      <gray>网络延迟: <ping>ms</gray>
   player-format: "<player_server> <gray>|</gray> <white><player_name></white>"
   sort-mode: "server_then_name"
   show-empty-group: false

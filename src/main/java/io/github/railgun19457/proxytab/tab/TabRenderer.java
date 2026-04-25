@@ -32,8 +32,12 @@ public final class TabRenderer {
 
     public void renderAll(ProxyTabConfig config, List<TabPlayerEntry> entries, Collection<Player> viewers) {
         for (Player viewer : viewers) {
-            if (shouldRelease(config, viewer)) {
+            if (!config.tab().enabled()) {
                 release(viewer);
+                continue;
+            }
+            if (isBlacklisted(config, viewer)) {
+                suspend(viewer);
                 continue;
             }
             render(viewer, config, entries);
@@ -47,25 +51,18 @@ public final class TabRenderer {
         managedViewers.clear();
     }
 
-    private boolean shouldRelease(ProxyTabConfig config, Player viewer) {
-        return !config.tab().enabled()
-            || config.general().blacklistedServers().contains(placeholderService.serverName(viewer));
+    public void releaseBeforeServerSwitch(Player viewer) {
+        release(viewer);
+    }
+
+    private boolean isBlacklisted(ProxyTabConfig config, Player viewer) {
+        return config.general().blacklistedServers().contains(placeholderService.serverName(viewer));
     }
 
     private void render(Player viewer, ProxyTabConfig config, List<TabPlayerEntry> entries) {
         try {
-            Component header = placeholderService.renderViewerText(
-                config.tab().header(),
-                config,
-                viewer,
-                "tab.header"
-            );
-            Component baseFooter = placeholderService.renderViewerText(
-                config.tab().footer(),
-                config,
-                viewer,
-                "tab.footer"
-            );
+            Component header = renderHeader(config, viewer);
+            Component baseFooter = renderFooter(config, viewer);
 
             Component footer = announcementService.tabFooterLine(config, viewer)
                 .map(line -> baseFooter.append(Component.newline()).append(line))
@@ -109,6 +106,32 @@ public final class TabRenderer {
         }
     }
 
+    private Component renderHeader(ProxyTabConfig config, Player viewer) {
+        if (!config.tab().header().enabled()) {
+            return Component.empty();
+        }
+
+        return placeholderService.renderViewerText(
+            config.tab().header().value(),
+            config,
+            viewer,
+            "tab.header.value"
+        );
+    }
+
+    private Component renderFooter(ProxyTabConfig config, Player viewer) {
+        if (!config.tab().footer().enabled()) {
+            return Component.empty();
+        }
+
+        return placeholderService.renderViewerText(
+            config.tab().footer().value(),
+            config,
+            viewer,
+            "tab.footer.value"
+        );
+    }
+
     private void release(Player viewer) {
         if (!managedViewers.remove(viewer.getUniqueId())) {
             return;
@@ -119,6 +142,18 @@ public final class TabRenderer {
             viewer.getTabList().clearAll();
         } catch (RuntimeException exception) {
             logger.warn("Failed to release tab control for {}.", viewer.getUsername(), exception);
+        }
+    }
+
+    private void suspend(Player viewer) {
+        if (!managedViewers.remove(viewer.getUniqueId())) {
+            return;
+        }
+
+        try {
+            viewer.clearPlayerListHeaderAndFooter();
+        } catch (RuntimeException exception) {
+            logger.warn("Failed to suspend tab control for {}.", viewer.getUsername(), exception);
         }
     }
 }
