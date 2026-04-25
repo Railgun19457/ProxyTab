@@ -35,7 +35,8 @@ ProxyTab 是一个运行在 Velocity 上的全局 Tab 列表管理插件，用�
 - `/proxytab` 显示插件状态和帮助信息
 - `/ptab` `/proxytab` 的别名
 - `/proxytab reload` 重载配置文件
-- `/proxytab announcement set <chat|tab> <always|once_per_day> <content...>` 设置公告
+- `/proxytab announcement set chat <always|once_per_day> <content...>` 设置聊天公告
+- `/proxytab announcement set tab always <content...>` 设置 Tab 公告
 - `/proxytab announcement delete <chat|tab>` 删除公告
 - `/proxytab close-notice` 关闭今日聊天公告提醒（由点击按钮触发）
 

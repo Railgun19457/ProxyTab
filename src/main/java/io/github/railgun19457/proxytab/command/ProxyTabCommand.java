@@ -80,7 +80,8 @@ public final class ProxyTabCommand implements SimpleCommand {
                 return filter(List.of("chat", "tab"), args[2]);
             }
             if (args.length == 4 && "set".equalsIgnoreCase(args[1])) {
-                return filter(List.of("always", "once_per_day"), args[3]);
+                Optional<AnnouncementSlot> slot = AnnouncementSlot.parse(args[2]);
+                return filter(announcementModesFor(slot.orElse(null)), args[3]);
             }
         }
 
@@ -136,7 +137,7 @@ public final class ProxyTabCommand implements SimpleCommand {
 
     private void executeAnnouncementSet(CommandSource source, String[] args) {
         if (args.length < 5) {
-            send(source, "<red>用法: /proxytab announcement set <chat|tab> <always|once_per_day> <content...></red>");
+            sendAnnouncementUsage(source);
             return;
         }
 
@@ -149,6 +150,10 @@ public final class ProxyTabCommand implements SimpleCommand {
         AnnouncementMode mode = AnnouncementMode.parse(args[3], null);
         if (mode == null) {
             send(source, "<red>公告模式只能是 always 或 once_per_day。</red>");
+            return;
+        }
+        if (slot.get() == AnnouncementSlot.TAB && mode != AnnouncementMode.ALWAYS) {
+            send(source, "<red>Tab 公告目前只支持 always 模式。</red>");
             return;
         }
 
@@ -199,7 +204,8 @@ public final class ProxyTabCommand implements SimpleCommand {
             <gray>聊天公告: <green>%s</green></gray>
             <gray>Tab 公告: <green>%s</green></gray>
             <gray>/proxytab reload</gray>
-            <gray>/proxytab announcement set <chat|tab> <always|once_per_day> <content...></gray>
+            <gray>/proxytab announcement set chat <always|once_per_day> <content...></gray>
+            <gray>/proxytab announcement set tab always <content...></gray>
             """.formatted(
             server.getAllPlayers().size(),
             configManager.current().tab().enabled() ? "enabled" : "disabled",
@@ -213,7 +219,8 @@ public final class ProxyTabCommand implements SimpleCommand {
             <gold>ProxyTab 命令</gold>
             <gray>/proxytab</gray>
             <gray>/proxytab reload</gray>
-            <gray>/proxytab announcement set <chat|tab> <always|once_per_day> <content...></gray>
+            <gray>/proxytab announcement set chat <always|once_per_day> <content...></gray>
+            <gray>/proxytab announcement set tab always <content...></gray>
             <gray>/proxytab announcement delete <chat|tab></gray>
             """);
     }
@@ -221,7 +228,8 @@ public final class ProxyTabCommand implements SimpleCommand {
     private void sendAnnouncementUsage(CommandSource source) {
         send(source, """
             <red>公告命令用法:</red>
-            <gray>/proxytab announcement set <chat|tab> <always|once_per_day> <content...></gray>
+            <gray>/proxytab announcement set chat <always|once_per_day> <content...></gray>
+            <gray>/proxytab announcement set tab always <content...></gray>
             <gray>/proxytab announcement delete <chat|tab></gray>
             """);
     }
@@ -242,6 +250,13 @@ public final class ProxyTabCommand implements SimpleCommand {
             }
         }
         return result;
+    }
+
+    private List<String> announcementModesFor(AnnouncementSlot slot) {
+        if (slot == AnnouncementSlot.TAB) {
+            return List.of("always");
+        }
+        return List.of("always", "once_per_day");
     }
 
     private boolean has(CommandSource source, String permission) {

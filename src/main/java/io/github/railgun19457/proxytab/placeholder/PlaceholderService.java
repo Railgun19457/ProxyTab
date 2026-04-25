@@ -4,6 +4,8 @@ import com.velocitypowered.api.proxy.Player;
 import com.velocitypowered.api.proxy.ProxyServer;
 import io.github.railgun19457.proxytab.config.ConfigManager;
 import io.github.railgun19457.proxytab.config.ProxyTabConfig;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
@@ -23,7 +25,7 @@ public final class PlaceholderService {
     }
 
     public Component renderViewerText(String raw, ProxyTabConfig config, Player viewer, String fieldName) {
-        return renderViewerText(raw, config, viewer, fieldName, TagResolver.empty());
+        return renderViewerText(raw, config, viewer, fieldName, TagResolver.empty(), null);
     }
 
     public Component renderViewerText(
@@ -33,9 +35,30 @@ public final class PlaceholderService {
         String fieldName,
         TagResolver extraResolver
     ) {
+        return renderViewerText(raw, config, viewer, fieldName, extraResolver, null);
+    }
+
+    public Component renderViewerText(
+        String raw,
+        ProxyTabConfig config,
+        Player viewer,
+        String fieldName,
+        Map<String, Integer> serverOnlineCounts
+    ) {
+        return renderViewerText(raw, config, viewer, fieldName, TagResolver.empty(), serverOnlineCounts);
+    }
+
+    public Component renderViewerText(
+        String raw,
+        ProxyTabConfig config,
+        Player viewer,
+        String fieldName,
+        TagResolver extraResolver,
+        Map<String, Integer> serverOnlineCounts
+    ) {
         return deserialize(raw, fieldName, TagResolver.resolver(
             globalResolver(config),
-            viewerResolver(config, viewer),
+            viewerResolver(config, viewer, serverOnlineCounts),
             extraResolver
         ));
     }
@@ -60,7 +83,22 @@ public final class PlaceholderService {
     }
 
     public int serverOnline(String serverName) {
+        return serverOnline(serverName, null);
+    }
+
+    public Map<String, Integer> serverOnlineCounts() {
+        Map<String, Integer> counts = new HashMap<>();
+        for (Player player : server.getAllPlayers()) {
+            counts.merge(serverName(player), 1, Integer::sum);
+        }
+        return Map.copyOf(counts);
+    }
+
+    private int serverOnline(String serverName, Map<String, Integer> serverOnlineCounts) {
         String key = ConfigManager.normalizeKey(serverName);
+        if (serverOnlineCounts != null) {
+            return serverOnlineCounts.getOrDefault(key, 0);
+        }
         return (int) server.getAllPlayers().stream()
             .filter(player -> Objects.equals(serverName(player), key))
             .count();
@@ -83,11 +121,15 @@ public final class PlaceholderService {
         );
     }
 
-    private TagResolver viewerResolver(ProxyTabConfig config, Player viewer) {
+    private TagResolver viewerResolver(
+        ProxyTabConfig config,
+        Player viewer,
+        Map<String, Integer> serverOnlineCounts
+    ) {
         String currentServer = serverName(viewer);
         return TagResolver.resolver(
             Placeholder.component("current_server", serverDisplayName(config, currentServer)),
-            Placeholder.unparsed("server_online", Integer.toString(serverOnline(currentServer))),
+            Placeholder.unparsed("server_online", Integer.toString(serverOnline(currentServer, serverOnlineCounts))),
             Placeholder.unparsed("ping", Long.toString(viewer.getPing()))
         );
     }

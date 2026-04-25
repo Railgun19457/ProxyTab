@@ -63,6 +63,9 @@ public final class JsonAnnouncementRepository implements AnnouncementRepository 
                     node.node("mode").getString(),
                     slot == AnnouncementSlot.CHAT ? AnnouncementMode.ONCE_PER_DAY : AnnouncementMode.ALWAYS
                 );
+                if (slot == AnnouncementSlot.TAB) {
+                    mode = AnnouncementMode.ALWAYS;
+                }
                 String updatedAtRaw = node.node("updated-at").getString();
                 Instant updatedAt = parseInstant(updatedAtRaw);
                 cache.put(slot, new Announcement(slot, mode, content, updatedAt));

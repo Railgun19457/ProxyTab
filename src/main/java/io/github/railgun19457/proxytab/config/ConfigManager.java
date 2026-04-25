@@ -59,6 +59,17 @@ public final class ConfigManager {
         return current.get();
     }
 
+    public ProxyTabConfig loadInitial() {
+        try {
+            return load();
+        } catch (ConfigLoadException exception) {
+            logger.error("Failed to load config.yml; ProxyTab will use safe defaults.", exception);
+            ProxyTabConfig fallback = defaults();
+            current.set(fallback);
+            return fallback;
+        }
+    }
+
     public ProxyTabConfig load() {
         try {
             ensureConfigFile();
@@ -68,11 +79,10 @@ public final class ConfigManager {
             ProxyTabConfig parsed = parse(loader.load());
             current.set(parsed);
             return parsed;
+        } catch (ConfigLoadException exception) {
+            throw exception;
         } catch (Exception exception) {
-            logger.error("Failed to load config.yml; ProxyTab will use safe defaults.", exception);
-            ProxyTabConfig fallback = defaults();
-            current.set(fallback);
-            return fallback;
+            throw new ConfigLoadException("Failed to load config.yml.", exception);
         }
     }
 
@@ -227,8 +237,7 @@ public final class ConfigManager {
         try {
             return List.of(Pattern.compile(rawPattern));
         } catch (NullPointerException | PatternSyntaxException exception) {
-            logger.error("Invalid regex in general.ignore-regex: {}", rawPattern, exception);
-            return List.of();
+            throw new ConfigLoadException("Invalid regex in general.ignore-regex: " + rawPattern, exception);
         }
     }
 
@@ -237,8 +246,7 @@ public final class ConfigManager {
             List<String> values = node.getList(String.class);
             return values == null ? fallback : values;
         } catch (Exception exception) {
-            logger.error("Failed to parse {} as a string list; using defaults.", fieldName, exception);
-            return fallback;
+            throw new ConfigLoadException("Failed to parse " + fieldName + " as a string list.", exception);
         }
     }
 

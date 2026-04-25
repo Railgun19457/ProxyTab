@@ -59,7 +59,7 @@ public final class ProxyTabPlugin {
     @Subscribe
     public void onProxyInitialization(ProxyInitializeEvent event) {
         configManager = new ConfigManager(dataDirectory, logger, miniMessage);
-        ProxyTabConfig config = configManager.load();
+        ProxyTabConfig config = configManager.loadInitial();
 
         PlaceholderService placeholderService = new PlaceholderService(server, miniMessage, logger);
         announcementService = new AnnouncementService(logger, configManager::current, placeholderService);

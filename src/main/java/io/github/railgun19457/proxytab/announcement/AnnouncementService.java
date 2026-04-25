@@ -57,7 +57,8 @@ public final class AnnouncementService {
     }
 
     public synchronized void set(AnnouncementSlot slot, AnnouncementMode mode, String content) throws IOException {
-        Announcement announcement = new Announcement(slot, mode, content, Instant.now());
+        AnnouncementMode effectiveMode = slot == AnnouncementSlot.TAB ? AnnouncementMode.ALWAYS : mode;
+        Announcement announcement = new Announcement(slot, effectiveMode, content, Instant.now());
         repository().save(slot, announcement);
         announcements.put(slot, announcement);
         clearSlotState(slot);
@@ -117,7 +118,11 @@ public final class AnnouncementService {
         }
     }
 
-    public Optional<Component> tabFooterLine(ProxyTabConfig config, Player viewer) {
+    public Optional<Component> tabFooterLine(
+        ProxyTabConfig config,
+        Player viewer,
+        Map<String, Integer> serverOnlineCounts
+    ) {
         if (!config.announcements().tab().enabled()) {
             return Optional.empty();
         }
@@ -135,7 +140,8 @@ public final class AnnouncementService {
             announcement.content(),
             config,
             viewer,
-            "announcement.tab"
+            "announcement.tab",
+            serverOnlineCounts
         );
         String format = config.announcements().tab().format();
         if (format == null || format.isBlank()) {
@@ -147,7 +153,8 @@ public final class AnnouncementService {
             config,
             viewer,
             "announcements.tab.format",
-            Placeholder.component("announcement", announcementContent)
+            Placeholder.component("announcement", announcementContent),
+            serverOnlineCounts
         ));
     }
 
@@ -191,12 +198,8 @@ public final class AnnouncementService {
         }
     }
 
-    private void clearSlotState(AnnouncementSlot slot) {
-        try {
-            stateRepository().clearSlotState(slot);
-        } catch (IOException exception) {
-            logger.error("Failed to clear notice state for {} announcement.", slot.key(), exception);
-        }
+    private void clearSlotState(AnnouncementSlot slot) throws IOException {
+        stateRepository().clearSlotState(slot);
     }
 
     private AnnouncementRepository repository() {

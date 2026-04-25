@@ -7,7 +7,9 @@ import io.github.railgun19457.proxytab.announcement.AnnouncementService;
 import io.github.railgun19457.proxytab.config.ProxyTabConfig;
 import io.github.railgun19457.proxytab.placeholder.PlaceholderService;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -19,6 +21,7 @@ public final class TabRenderer {
     private final PlaceholderService placeholderService;
     private final AnnouncementService announcementService;
     private final Set<UUID> managedViewers = ConcurrentHashMap.newKeySet();
+    private final Map<UUID, Set<UUID>> managedEntriesByViewer = new ConcurrentHashMap<>();
 
     public TabRenderer(
         Logger logger,
@@ -31,6 +34,9 @@ public final class TabRenderer {
     }
 
     public void renderAll(ProxyTabConfig config, List<TabPlayerEntry> entries, Collection<Player> viewers) {
+        Map<String, Integer> serverOnlineCounts = config.tab().enabled()
+            ? placeholderService.serverOnlineCounts()
+            : Map.of();
         for (Player viewer : viewers) {
             if (!config.tab().enabled()) {
                 release(viewer);
@@ -40,7 +46,7 @@ public final class TabRenderer {
                 suspend(viewer);
                 continue;
             }
-            render(viewer, config, entries);
+            render(viewer, config, entries, serverOnlineCounts);
         }
     }
 
@@ -49,6 +55,7 @@ public final class TabRenderer {
             release(player);
         }
         managedViewers.clear();
+        managedEntriesByViewer.clear();
     }
 
     public void releaseBeforeServerSwitch(Player viewer) {
@@ -59,12 +66,17 @@ public final class TabRenderer {
         return config.general().blacklistedServers().contains(placeholderService.serverName(viewer));
     }
 
-    private void render(Player viewer, ProxyTabConfig config, List<TabPlayerEntry> entries) {
+    private void render(
+        Player viewer,
+        ProxyTabConfig config,
+        List<TabPlayerEntry> entries,
+        Map<String, Integer> serverOnlineCounts
+    ) {
         try {
-            Component header = renderHeader(config, viewer);
-            Component baseFooter = renderFooter(config, viewer);
+            Component header = renderHeader(config, viewer, serverOnlineCounts);
+            Component baseFooter = renderFooter(config, viewer, serverOnlineCounts);
 
-            Component footer = announcementService.tabFooterLine(config, viewer)
+            Component footer = announcementService.tabFooterLine(config, viewer, serverOnlineCounts)
                 .map(line -> baseFooter.append(Component.newline()).append(line))
                 .orElse(baseFooter);
 
@@ -78,7 +90,27 @@ public final class TabRenderer {
 
     private void rewriteEntries(Player viewer, List<TabPlayerEntry> entries) {
         TabList tabList = viewer.getTabList();
-        tabList.clearAll();
+        UUID viewerId = viewer.getUniqueId();
+        Set<UUID> managedEntries = managedEntriesByViewer.get(viewerId);
+        if (managedEntries == null) {
+            tabList.clearAll();
+            managedEntries = ConcurrentHashMap.newKeySet();
+            managedEntriesByViewer.put(viewerId, managedEntries);
+        }
+
+        Set<UUID> desiredEntryIds = new HashSet<>();
+        for (TabPlayerEntry entry : entries) {
+            if (entry.player().isActive()) {
+                desiredEntryIds.add(entry.player().getUniqueId());
+            }
+        }
+
+        for (UUID managedEntryId : Set.copyOf(managedEntries)) {
+            if (!desiredEntryIds.contains(managedEntryId)) {
+                tabList.removeEntry(managedEntryId);
+                managedEntries.remove(managedEntryId);
+            }
+        }
 
         for (TabPlayerEntry entry : entries) {
             if (!entry.player().isActive()) {
@@ -86,18 +118,11 @@ public final class TabRenderer {
             }
 
             try {
-                TabListEntry tabEntry = TabListEntry.builder()
-                    .tabList(tabList)
-                    .profile(entry.player().getGameProfile())
-                    .displayName(entry.displayName())
-                    .latency(entry.latency())
-                    .gameMode(0)
-                    .listed(true)
-                    .build();
-                tabList.addEntry(tabEntry);
+                upsertEntry(tabList, entry);
+                managedEntries.add(entry.player().getUniqueId());
             } catch (RuntimeException exception) {
                 logger.warn(
-                    "Failed to add tab entry {} for viewer {}.",
+                    "Failed to update tab entry {} for viewer {}.",
                     entry.player().getUsername(),
                     viewer.getUsername(),
                     exception
@@ -106,7 +131,34 @@ public final class TabRenderer {
         }
     }
 
-    private Component renderHeader(ProxyTabConfig config, Player viewer) {
+    private void upsertEntry(TabList tabList, TabPlayerEntry entry) {
+        UUID playerId = entry.player().getUniqueId();
+        TabListEntry tabEntry = tabList.getEntry(playerId).orElse(null);
+        if (tabEntry == null) {
+            tabEntry = TabListEntry.builder()
+                .tabList(tabList)
+                .profile(entry.player().getGameProfile())
+                .displayName(entry.displayName())
+                .latency(entry.latency())
+                .gameMode(0)
+                .listed(true)
+                .build();
+            tabList.addEntry(tabEntry);
+            return;
+        }
+
+        tabEntry
+            .setDisplayName(entry.displayName())
+            .setLatency(entry.latency())
+            .setGameMode(0)
+            .setListed(true);
+    }
+
+    private Component renderHeader(
+        ProxyTabConfig config,
+        Player viewer,
+        Map<String, Integer> serverOnlineCounts
+    ) {
         if (!config.tab().header().enabled()) {
             return Component.empty();
         }
@@ -115,11 +167,16 @@ public final class TabRenderer {
             config.tab().header().value(),
             config,
             viewer,
-            "tab.header.value"
+            "tab.header.value",
+            serverOnlineCounts
         );
     }
 
-    private Component renderFooter(ProxyTabConfig config, Player viewer) {
+    private Component renderFooter(
+        ProxyTabConfig config,
+        Player viewer,
+        Map<String, Integer> serverOnlineCounts
+    ) {
         if (!config.tab().footer().enabled()) {
             return Component.empty();
         }
@@ -128,12 +185,16 @@ public final class TabRenderer {
             config.tab().footer().value(),
             config,
             viewer,
-            "tab.footer.value"
+            "tab.footer.value",
+            serverOnlineCounts
         );
     }
 
     private void release(Player viewer) {
-        if (!managedViewers.remove(viewer.getUniqueId())) {
+        UUID viewerId = viewer.getUniqueId();
+        boolean wasManaged = managedViewers.remove(viewerId);
+        boolean hadManagedEntries = managedEntriesByViewer.remove(viewerId) != null;
+        if (!wasManaged && !hadManagedEntries) {
             return;
         }
 
@@ -146,7 +207,10 @@ public final class TabRenderer {
     }
 
     private void suspend(Player viewer) {
-        if (!managedViewers.remove(viewer.getUniqueId())) {
+        UUID viewerId = viewer.getUniqueId();
+        boolean wasManaged = managedViewers.remove(viewerId);
+        boolean hadManagedEntries = managedEntriesByViewer.remove(viewerId) != null;
+        if (!wasManaged && !hadManagedEntries) {
             return;
         }
 
