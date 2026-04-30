@@ -93,7 +93,6 @@ public final class TabRenderer {
         UUID viewerId = viewer.getUniqueId();
         Set<UUID> managedEntries = managedEntriesByViewer.get(viewerId);
         if (managedEntries == null) {
-            tabList.clearAll();
             managedEntries = ConcurrentHashMap.newKeySet();
             managedEntriesByViewer.put(viewerId, managedEntries);
         }
@@ -140,7 +139,7 @@ public final class TabRenderer {
                 .profile(entry.player().getGameProfile())
                 .displayName(entry.displayName())
                 .latency(entry.latency())
-                .gameMode(0)
+                .gameMode(entry.gameMode())
                 .listed(true)
                 .build();
             tabList.addEntry(tabEntry);
@@ -150,7 +149,7 @@ public final class TabRenderer {
         tabEntry
             .setDisplayName(entry.displayName())
             .setLatency(entry.latency())
-            .setGameMode(0)
+            .setGameMode(entry.gameMode())
             .setListed(true);
     }
 
@@ -192,15 +191,17 @@ public final class TabRenderer {
 
     private void release(Player viewer) {
         UUID viewerId = viewer.getUniqueId();
-        boolean wasManaged = managedViewers.remove(viewerId);
-        boolean hadManagedEntries = managedEntriesByViewer.remove(viewerId) != null;
-        if (!wasManaged && !hadManagedEntries) {
+        Set<UUID> managedEntries = managedEntriesByViewer.get(viewerId);
+        boolean wasManaged = managedViewers.contains(viewerId) || managedEntries != null;
+        if (!wasManaged) {
             return;
         }
 
         try {
             viewer.clearPlayerListHeaderAndFooter();
-            viewer.getTabList().clearAll();
+            removeManagedEntries(viewer.getTabList(), managedEntries);
+            managedViewers.remove(viewerId);
+            managedEntriesByViewer.remove(viewerId);
         } catch (RuntimeException exception) {
             logger.warn("Failed to release tab control for {}.", viewer.getUsername(), exception);
         }
@@ -208,16 +209,29 @@ public final class TabRenderer {
 
     private void suspend(Player viewer) {
         UUID viewerId = viewer.getUniqueId();
-        boolean wasManaged = managedViewers.remove(viewerId);
-        boolean hadManagedEntries = managedEntriesByViewer.remove(viewerId) != null;
-        if (!wasManaged && !hadManagedEntries) {
+        Set<UUID> managedEntries = managedEntriesByViewer.get(viewerId);
+        boolean wasManaged = managedViewers.contains(viewerId) || managedEntries != null;
+        if (!wasManaged) {
             return;
         }
 
         try {
             viewer.clearPlayerListHeaderAndFooter();
+            removeManagedEntries(viewer.getTabList(), managedEntries);
+            managedViewers.remove(viewerId);
+            managedEntriesByViewer.remove(viewerId);
         } catch (RuntimeException exception) {
             logger.warn("Failed to suspend tab control for {}.", viewer.getUsername(), exception);
+        }
+    }
+
+    private void removeManagedEntries(TabList tabList, Set<UUID> managedEntries) {
+        if (managedEntries == null || managedEntries.isEmpty()) {
+            return;
+        }
+
+        for (UUID managedEntryId : Set.copyOf(managedEntries)) {
+            tabList.removeEntry(managedEntryId);
         }
     }
 }

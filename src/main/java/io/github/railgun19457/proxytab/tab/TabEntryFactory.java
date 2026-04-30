@@ -1,6 +1,7 @@
 package io.github.railgun19457.proxytab.tab;
 
 import com.velocitypowered.api.proxy.Player;
+import com.velocitypowered.api.proxy.player.TabListEntry;
 import io.github.railgun19457.proxytab.config.ProxyTabConfig;
 import io.github.railgun19457.proxytab.placeholder.PlaceholderService;
 
@@ -21,7 +22,8 @@ public final class TabEntryFactory {
                 player,
                 "tab.player-format"
             ),
-            safeLatency(player.getPing())
+            safeLatency(player.getPing()),
+            safeGameMode(player)
         );
     }
 
@@ -33,6 +35,14 @@ public final class TabEntryFactory {
             return Integer.MIN_VALUE;
         }
         return (int) ping;
+    }
+
+    private int safeGameMode(Player player) {
+        return player.getTabList()
+            .getEntry(player.getUniqueId())
+            .map(TabListEntry::getGameMode)
+            .filter(gameMode -> gameMode >= 0 && gameMode <= 3)
+            .orElse(0);
     }
 }
 

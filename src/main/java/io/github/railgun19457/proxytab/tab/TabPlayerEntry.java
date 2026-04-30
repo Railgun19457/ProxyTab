@@ -7,7 +7,8 @@ public record TabPlayerEntry(
     Player player,
     String serverName,
     Component displayName,
-    int latency
+    int latency,
+    int gameMode
 ) {
 }
 
