@@ -102,7 +102,7 @@ public final class AnnouncementService {
             player,
             "announcement.chat"
         );
-        Component closeButton = slotConfig.closeButton().enabled()
+        Component closeButton = slotConfig.closeButton().enabled() && announcement.mode() != AnnouncementMode.ONCE_PER_DAY
             ? placeholderService.renderViewerText(
                 slotConfig.closeButton().format(),
                 config,
@@ -115,7 +115,7 @@ public final class AnnouncementService {
         Component message;
         if (format == null || format.isBlank()) {
             message = announcementContent;
-            if (slotConfig.closeButton().enabled()) {
+            if (slotConfig.closeButton().enabled() && announcement.mode() != AnnouncementMode.ONCE_PER_DAY) {
                 message = message.append(closeButton);
             }
         } else {
