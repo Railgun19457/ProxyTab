@@ -25,6 +25,8 @@ import io.github.railgun19457.proxytab.tab.TabEntryFactory;
 import io.github.railgun19457.proxytab.tab.TabRenderer;
 import io.github.railgun19457.proxytab.tab.TabScheduler;
 import io.github.railgun19457.proxytab.tab.TabViewBuilder;
+import io.github.railgun19457.proxytab.tab.VirtualTabEntryRegistry;
+import io.github.railgun19457.proxytab.tab.VirtualPlayerBridge;
 import java.nio.file.Path;
 import java.util.Locale;
 import java.util.concurrent.TimeUnit;
@@ -34,7 +36,7 @@ import org.slf4j.Logger;
 @Plugin(
     id = "proxytab",
     name = "ProxyTab",
-    version = "1.0.0",
+    version = "0.0.3",
     description = "Global tab-list manager for Velocity.",
     authors = {"ProxyTab Contributors"}
 )
@@ -48,6 +50,7 @@ public final class ProxyTabPlugin {
     private AnnouncementService announcementService;
     private TabRenderer tabRenderer;
     private TabScheduler tabScheduler;
+    private VirtualPlayerBridge virtualPlayerBridge;
 
     @Inject
     public ProxyTabPlugin(ProxyServer server, Logger logger, @DataDirectory Path dataDirectory) {
@@ -65,10 +68,14 @@ public final class ProxyTabPlugin {
         announcementService = new AnnouncementService(logger, configManager::current, placeholderService);
         configureStorage(config);
 
+        VirtualTabEntryRegistry virtualEntries = new VirtualTabEntryRegistry();
         TabEntryFactory entryFactory = new TabEntryFactory(placeholderService);
-        TabViewBuilder viewBuilder = new TabViewBuilder(server, entryFactory);
-        tabRenderer = new TabRenderer(logger, placeholderService, announcementService);
+        TabViewBuilder viewBuilder = new TabViewBuilder(server, entryFactory, virtualEntries);
+        tabRenderer = new TabRenderer(logger, placeholderService, announcementService, virtualEntries);
         tabScheduler = new TabScheduler(this, server, logger, configManager::current, viewBuilder, tabRenderer);
+        virtualPlayerBridge = new VirtualPlayerBridge(virtualEntries, logger);
+        server.getChannelRegistrar().register(VirtualPlayerBridge.CHANNEL);
+        server.getEventManager().register(this, virtualPlayerBridge);
 
         registerCommand();
         tabScheduler.restart();
@@ -80,6 +87,7 @@ public final class ProxyTabPlugin {
         if (tabScheduler != null) {
             tabScheduler.shutdown();
         }
+        server.getChannelRegistrar().unregister(VirtualPlayerBridge.CHANNEL);
         logger.info("ProxyTab has been disabled.");
     }
 

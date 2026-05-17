@@ -20,17 +20,20 @@ public final class TabRenderer {
     private final Logger logger;
     private final PlaceholderService placeholderService;
     private final AnnouncementService announcementService;
+    private final VirtualTabEntryRegistry virtualEntries;
     private final Set<UUID> managedViewers = ConcurrentHashMap.newKeySet();
     private final Map<UUID, Set<UUID>> managedEntriesByViewer = new ConcurrentHashMap<>();
 
     public TabRenderer(
         Logger logger,
         PlaceholderService placeholderService,
-        AnnouncementService announcementService
+        AnnouncementService announcementService,
+        VirtualTabEntryRegistry virtualEntries
     ) {
         this.logger = logger;
         this.placeholderService = placeholderService;
         this.announcementService = announcementService;
+        this.virtualEntries = virtualEntries;
     }
 
     public void renderAll(ProxyTabConfig config, List<TabPlayerEntry> entries, Collection<Player> viewers) {
@@ -99,8 +102,8 @@ public final class TabRenderer {
 
         Set<UUID> desiredEntryIds = new HashSet<>();
         for (TabPlayerEntry entry : entries) {
-            if (entry.player().isActive()) {
-                desiredEntryIds.add(entry.player().getUniqueId());
+            if (entry.active()) {
+                desiredEntryIds.add(entry.uniqueId());
             }
         }
 
@@ -111,18 +114,23 @@ public final class TabRenderer {
             }
         }
 
+        for (UUID hiddenEntryId : virtualEntries.hiddenEntryIds()) {
+            tabList.removeEntry(hiddenEntryId);
+            managedEntries.remove(hiddenEntryId);
+        }
+
         for (TabPlayerEntry entry : entries) {
-            if (!entry.player().isActive()) {
+            if (!entry.active()) {
                 continue;
             }
 
             try {
                 upsertEntry(tabList, entry);
-                managedEntries.add(entry.player().getUniqueId());
+                managedEntries.add(entry.uniqueId());
             } catch (RuntimeException exception) {
                 logger.warn(
                     "Failed to update tab entry {} for viewer {}.",
-                    entry.player().getUsername(),
+                    entry.username(),
                     viewer.getUsername(),
                     exception
                 );
@@ -131,12 +139,12 @@ public final class TabRenderer {
     }
 
     private void upsertEntry(TabList tabList, TabPlayerEntry entry) {
-        UUID playerId = entry.player().getUniqueId();
+        UUID playerId = entry.uniqueId();
         TabListEntry tabEntry = tabList.getEntry(playerId).orElse(null);
         if (tabEntry == null) {
             tabEntry = TabListEntry.builder()
                 .tabList(tabList)
-                .profile(entry.player().getGameProfile())
+                .profile(entry.profile())
                 .displayName(entry.displayName())
                 .latency(entry.latency())
                 .gameMode(entry.gameMode())
@@ -235,4 +243,3 @@ public final class TabRenderer {
         }
     }
 }
-

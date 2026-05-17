@@ -2,8 +2,10 @@ package io.github.railgun19457.proxytab.tab;
 
 import com.velocitypowered.api.proxy.Player;
 import com.velocitypowered.api.proxy.player.TabListEntry;
+import com.velocitypowered.api.util.GameProfile;
 import io.github.railgun19457.proxytab.config.ProxyTabConfig;
 import io.github.railgun19457.proxytab.placeholder.PlaceholderService;
+import java.util.List;
 
 public final class TabEntryFactory {
     private final PlaceholderService placeholderService;
@@ -13,18 +15,51 @@ public final class TabEntryFactory {
     }
 
     public TabPlayerEntry create(Player player, ProxyTabConfig config) {
+        String serverName = placeholderService.serverName(player);
         return new TabPlayerEntry(
-            player,
-            placeholderService.serverName(player),
+            player.getUniqueId(),
+            player.getUsername(),
+            player.getGameProfile(),
+            player.isActive(),
+            serverName,
             placeholderService.renderPlayerText(
                 config.tab().playerFormat(),
                 config,
-                player,
+                player.getUsername(),
+                serverName,
+                player.getPing(),
                 "tab.player-format"
             ),
             safeLatency(player.getPing()),
             safeGameMode(player)
         );
+    }
+
+    public TabPlayerEntry create(VirtualTabPlayer player, ProxyTabConfig config) {
+        return new TabPlayerEntry(
+            player.uniqueId(),
+            player.username(),
+            profile(player),
+            true,
+            player.serverName(),
+            placeholderService.renderPlayerText(
+                config.tab().playerFormat(),
+                config,
+                player.username(),
+                player.serverName(),
+                player.latency(),
+                "tab.player-format"
+            ),
+            safeLatency(player.latency()),
+            player.gameMode()
+        );
+    }
+
+    private GameProfile profile(VirtualTabPlayer player) {
+        List<GameProfile.Property> properties = player.textureValue().isBlank()
+            ? List.of()
+            : List.of(new GameProfile.Property("textures", player.textureValue(), player.textureSignature()));
+        return new GameProfile(player.uniqueId(), player.username(), properties);
     }
 
     private int safeLatency(long ping) {
@@ -45,4 +80,3 @@ public final class TabEntryFactory {
             .orElse(0);
     }
 }
-

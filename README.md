@@ -10,6 +10,7 @@ ProxyTab 是一个运行在 Velocity 上的全局 Tab 列表管理插件，用�
 - 按子服分组排序，支持子服显示名映射
 - 支持 MiniMessage，Header、Footer、玩家条目和公告均可使用格式标签
 - 支持玩家名正则过滤，可隐藏 Bot 或指定玩家
+- 支持后端插件通过通用虚拟玩家接口接入假人/机器人 Tab 条目
 - 支持黑名单子服，避免与特定子服 Tab 插件冲突
 - 支持聊天公告和 Tab 公告
 - 支持“今日不再提醒”，公告更新后会自动刷新提醒状态
@@ -66,6 +67,10 @@ ProxyTab 是一个运行在 Velocity 上的全局 Tab 列表管理插件，用�
 - `tab`：Tab 开关、Header/Footer 独立开关、玩家条目格式和排序策略
 - `announcements`：聊天公告/Tab 公告开关、关闭按钮和 Tab 公告外观
 - `storage`：JSON 存储文件路径
+
+## 虚拟玩家接口
+
+后端插件可以通过 `proxytab:virtual_players` 插件消息注册虚拟玩家条目，让假人或机器人使用 ProxyTab 的统一格式、排序和分组。接入协议见 [docs/virtual-players.md](docs/virtual-players.md)。
 
 
 ## 占位符

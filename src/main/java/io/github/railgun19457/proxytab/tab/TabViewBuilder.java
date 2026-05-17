@@ -10,23 +10,32 @@ import java.util.regex.Pattern;
 public final class TabViewBuilder {
     private final ProxyServer server;
     private final TabEntryFactory entryFactory;
+    private final VirtualTabEntryRegistry virtualEntries;
 
-    public TabViewBuilder(ProxyServer server, TabEntryFactory entryFactory) {
+    public TabViewBuilder(ProxyServer server, TabEntryFactory entryFactory, VirtualTabEntryRegistry virtualEntries) {
         this.server = server;
         this.entryFactory = entryFactory;
+        this.virtualEntries = virtualEntries;
     }
 
     public List<TabPlayerEntry> build(ProxyTabConfig config) {
         Comparator<TabPlayerEntry> comparator = config.tab().sortMode() == SortMode.NAME
-            ? Comparator.comparing(entry -> entry.player().getUsername(), String.CASE_INSENSITIVE_ORDER)
+            ? Comparator.comparing(TabPlayerEntry::username, String.CASE_INSENSITIVE_ORDER)
             : Comparator
                 .comparingInt((TabPlayerEntry entry) -> groupIndex(config, entry.serverName()))
                 .thenComparing(TabPlayerEntry::serverName)
-                .thenComparing(entry -> entry.player().getUsername(), String.CASE_INSENSITIVE_ORDER);
+                .thenComparing(TabPlayerEntry::username, String.CASE_INSENSITIVE_ORDER);
 
-        return server.getAllPlayers().stream()
+        List<TabPlayerEntry> realEntries = server.getAllPlayers().stream()
             .filter(player -> !isIgnored(config, player.getUsername()))
             .map(player -> entryFactory.create(player, config))
+            .toList();
+        List<TabPlayerEntry> dummyEntries = virtualEntries.all().stream()
+            .filter(player -> !isIgnored(config, player.username()))
+            .map(player -> entryFactory.create(player, config))
+            .toList();
+
+        return java.util.stream.Stream.concat(realEntries.stream(), dummyEntries.stream())
             .sorted(comparator)
             .toList();
     }

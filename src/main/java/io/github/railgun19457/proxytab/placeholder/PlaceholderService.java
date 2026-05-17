@@ -65,9 +65,13 @@ public final class PlaceholderService {
     }
 
     public Component renderPlayerText(String raw, ProxyTabConfig config, Player target, String fieldName) {
+        return renderPlayerText(raw, config, target.getUsername(), serverName(target), target.getPing(), fieldName);
+    }
+
+    public Component renderPlayerText(String raw, ProxyTabConfig config, String targetName, String targetServer, long targetPing, String fieldName) {
         return deserialize(raw, fieldName, TagResolver.resolver(
             globalResolver(config),
-            playerResolver(config, target),
+            playerResolver(config, targetName, targetServer, targetPing),
             CustomTagResolvers.all()
         ));
     }
@@ -136,13 +140,12 @@ public final class PlaceholderService {
         );
     }
 
-    private TagResolver playerResolver(ProxyTabConfig config, Player target) {
-        String targetServer = serverName(target);
+    private TagResolver playerResolver(ProxyTabConfig config, String targetName, String targetServer, long targetPing) {
         return TagResolver.resolver(
-            Placeholder.unparsed("player_name", target.getUsername()),
+            Placeholder.unparsed("player_name", targetName),
             Placeholder.component("player_server", serverDisplayName(config, targetServer)),
-            Placeholder.unparsed("ping", Long.toString(target.getPing())),
-            Placeholder.unparsed("player_ping", Long.toString(target.getPing()))
+            Placeholder.unparsed("ping", Long.toString(targetPing)),
+            Placeholder.unparsed("player_ping", Long.toString(targetPing))
         );
     }
 }
