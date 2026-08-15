@@ -3,10 +3,9 @@ package io.github.railgun19457.proxytab;
 import com.google.inject.Inject;
 import com.velocitypowered.api.command.CommandManager;
 import com.velocitypowered.api.command.CommandMeta;
-import com.velocitypowered.api.event.PostOrder;
 import com.velocitypowered.api.event.Subscribe;
 import com.velocitypowered.api.event.connection.PostLoginEvent;
-import com.velocitypowered.api.event.player.ServerPreConnectEvent;
+import com.velocitypowered.api.event.player.ServerConnectedEvent;
 import com.velocitypowered.api.event.proxy.ProxyInitializeEvent;
 import com.velocitypowered.api.event.proxy.ProxyShutdownEvent;
 import com.velocitypowered.api.plugin.Plugin;
@@ -36,7 +35,7 @@ import org.slf4j.Logger;
 @Plugin(
     id = "proxytab",
     name = "ProxyTab",
-    version = "0.0.3",
+    version = "0.0.4",
     description = "Global tab-list manager for Velocity.",
     authors = {"ProxyTab Contributors"}
 )
@@ -103,20 +102,15 @@ public final class ProxyTabPlugin {
             .schedule();
     }
 
-    @SuppressWarnings("deprecation")
-    @Subscribe(order = PostOrder.LATE)
-    public void onServerPreConnect(ServerPreConnectEvent event) {
-        if (tabRenderer == null || configManager == null || !event.getResult().isAllowed()) {
+    @Subscribe
+    public void onServerConnected(ServerConnectedEvent event) {
+        if (tabRenderer == null || configManager == null) {
             return;
         }
 
-        String targetServer = event.getResult()
-            .getServer()
-            .orElse(event.getOriginalServer())
-            .getServerInfo()
-            .getName();
-        if (configManager.current().general().blacklistedServers().contains(ConfigManager.normalizeKey(targetServer))) {
-            tabRenderer.releaseBeforeServerSwitch(event.getPlayer());
+        String currentServer = event.getServer().getServerInfo().getName();
+        if (configManager.current().general().blacklistedServers().contains(ConfigManager.normalizeKey(currentServer))) {
+            tabRenderer.releaseForBlacklistedServer(event.getPlayer());
         }
     }
 

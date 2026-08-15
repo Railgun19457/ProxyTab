@@ -61,7 +61,7 @@ public final class TabRenderer {
         managedEntriesByViewer.clear();
     }
 
-    public void releaseBeforeServerSwitch(Player viewer) {
+    public void releaseForBlacklistedServer(Player viewer) {
         release(viewer);
     }
 
